@@ -2,14 +2,14 @@
 
 namespace Identificators {
     [Serializable]
-    public abstract class Identifier
+    public abstract class Identifier: IComparable<Identifier>
     {
         public string name;
         public int hash => name.GetHashCode();
 
         public Types typeReturned = Types._void;
         public UseCase uses;
-
+        
         protected Identifier(string name)
         {
             this.name = name;
@@ -24,6 +24,10 @@ namespace Identificators {
             if (!(obj is Identifier o))
                 return false;
             return name.Equals(o.name) && typeReturned == o.typeReturned && uses.Equals(o.uses);
+        }
+        public int CompareTo(Identifier other)
+        {
+            return Math.Sign(hash - other.hash);
         }
         public override string ToString()
         {

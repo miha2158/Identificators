@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Identificators
 {
+    using static Extenisons;
+
     public static class Extenisons
     {
         public static Types ParseType(string s)
@@ -12,13 +15,18 @@ namespace Identificators
             switch (s)
             {
                 case "int":
+                case "System.Int32":
                     return Types._int;
+                case "System.Single":
                 case "float":
                     return Types._float;
+                case "System.Boolean":
                 case "bool":
                     return Types._bool;
+                case "System.Char":
                 case "char":
                     return Types._char;
+                case "System.String":
                 case "string":
                     return Types._string;
                 case "class":
@@ -51,16 +59,36 @@ namespace Identificators
         public static Identifier ParseIdentifier(string s)
         {
             Identifier result = null;
+            if (s == string.Empty)
+                return result;
+            
+            if (s.Contains("string") && !s.Contains('('))
+            {
+                string p = s.Substring(s.IndexOf('\"'), s.LastIndexOf('\"') - s.IndexOf('\"'));
+                if (s.Contains("consts"))
+                    return new Consts(s.Split(' ')[2], Types._string, p);
+                return new Vars(s.Split(' ')[1],Types._string, p);
+            }
+
+            if (s.Contains("char"))
+            {
+                if (s.Contains("consts"))
+                    return new Consts(s.Split(' ')[2], Types._char, s[s.IndexOf('\'') + 1]);
+                return new Vars(s.Split(' ')[1], Types._char, s[s.IndexOf('\'') + 1]);
+            }
 
             s = s.Replace("(", " ( ").Replace(")", " ) ").Replace("  ", " ");
             s = s.Trim();
+            if (s == string.Empty)
+                return result;
+
             if (s[s.Length - 1] != ';')
                 throw new FormatException();
             s = s.TrimEnd(';').Trim();
             var sArr = s.Split(' ').ToList();
 
             if (sArr[0] == "const")
-                result = new Consts(sArr[2], ParseType(sArr[1]), sArr[3].ParseTo(ParseType(sArr[1])));
+                return new Consts(sArr[2], ParseType(sArr[1]), sArr[4].ParseTo(ParseType(sArr[1])));
 
             if(s.Contains('('))
                 if (!s.Contains(')'))
@@ -69,7 +97,7 @@ namespace Identificators
                 {
                     result = new Methods(sArr[1],ParseType(sArr[0]));
                     var list = new LinkedList<Tuple<string, Types, Params>>();
-                    string sTemp = s.Substring(s.IndexOf('('), s.LastIndexOf(')'));
+                    string sTemp = s.Substring(s.IndexOf('('), s.LastIndexOf(')') - s.IndexOf('('));
                     sTemp = sTemp.Trim('(', ')');
 
                     var args = sTemp.Split(',');
@@ -99,20 +127,25 @@ namespace Identificators
     {
 
         static void Main(string[] args)
-        {/*
-            var tree = new BinTree<Identifier>(new Vars("a", Types._int),
-                new BinTree<Identifier>(new Classes("MyClass"), new BinTree<Identifier>(
-                    new Methods("method1",
-                        new LinkedList<Tuple<string, Types, Params>>(new[]
-                        {
-                            new Tuple<string, Types, Params>("x1", Types._int, Params._ref),
-                            new Tuple<string, Types, Params>("x2", Types._char, Params._ref),
-                            new Tuple<string, Types, Params>("x3", Types._float, Params._out)
-                        }), Types._string))),
-                new BinTree<Identifier>(new Consts("c", Types._float, 10)));
-            */
+        {
+            var fileStrings = new LinkedList<string>();
+
+            using (var fs = new FileStream("input.txt",FileMode.Open))
+            {
+                using (var sr = new StreamReader(fs))
+                {
+                    while (!sr.EndOfStream)
+                        fileStrings.AddLast(sr.ReadLine());
+                }
+            }
+            var tree = new BinTree<Identifier>();
+            foreach (string s in fileStrings)
+            {
+                tree.Add(ParseIdentifier(s));
+            }
 
 
+            Console.ReadKey(true);
             Console.ReadKey(true);
         }
     }

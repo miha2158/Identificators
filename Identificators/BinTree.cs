@@ -1,12 +1,15 @@
-﻿namespace Identificators
+﻿using System;
+
+namespace Identificators
 {
-    public class BinTree <T>
+    public class BinTree <T> where T:IComparable<T>
     {
         public BinTree<T> right { get; private set; } = null;
         public BinTree<T> left { get; private set; } = null;
 
         public T data;
 
+        public BinTree() { }
         public BinTree (T data)
         {
             this.data = data;
@@ -19,6 +22,24 @@
         public BinTree(BinTree<T> left, T data): this(data, null, left) { }
         public BinTree(T data, BinTree<T> right): this(data, right, null) { }
 
+
+        public void Add(T data)
+        {
+            if (this.data == null || this.data.Equals(default(T)))
+            {
+                this.data = data;
+                return;
+            }
+            if (data.CompareTo(this.data) < 0)
+                if (right == null)
+                    NewRight(data);
+                else
+                    right.Add(data);
+            else if (left == null)
+                NewLeft(data);
+            else
+                left.Add(data);
+        }
 
         public void NewRight(T data)
         {
